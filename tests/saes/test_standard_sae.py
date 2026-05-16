@@ -513,6 +513,32 @@ def test_fold_W_dec_norm_does_not_produce_nan_with_zero_norm_decoder(
         ).any(), f"Inf found in {name} after fold_W_dec_norm"
 
 
+@pytest.mark.parametrize("architecture", ALL_FOLDABLE_ARCHITECTURES)
+@torch.no_grad()
+def test_fold_W_dec_norm_keeps_parameter_storage_in_place(
+    architecture: str,
+):
+    cfg = build_sae_cfg_for_arch(architecture)
+    sae = SAE.from_dict(cfg.to_dict())
+    sae.turn_off_forward_pass_hook_z_reshaping()
+
+    for param in sae.parameters():
+        param.data = torch.rand_like(param)
+
+    w_dec_ptr = sae.W_dec.data.data_ptr()
+    w_enc_ptr = sae.W_enc.data.data_ptr()
+    b_enc_ptr = None
+    if hasattr(sae, "b_enc") and isinstance(sae.b_enc, torch.nn.Parameter):
+        b_enc_ptr = sae.b_enc.data.data_ptr()
+
+    sae.fold_W_dec_norm()
+
+    assert sae.W_dec.data.data_ptr() == w_dec_ptr
+    assert sae.W_enc.data.data_ptr() == w_enc_ptr
+    if b_enc_ptr is not None:
+        assert sae.b_enc.data.data_ptr() == b_enc_ptr
+
+
 @pytest.mark.parametrize("architecture", ALL_TRAINING_ARCHITECTURES)
 @torch.no_grad()
 def test_training_fold_W_dec_norm_does_not_produce_nan_with_zero_norm_decoder(

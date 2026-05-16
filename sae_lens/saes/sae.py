@@ -506,12 +506,12 @@ class SAE(HookedRootModule, Generic[T_SAE_CONFIG], ABC):
     def fold_W_dec_norm(self):
         """Fold decoder norms into encoder."""
         W_dec_norms = self.W_dec.norm(dim=-1).clamp(min=1e-8).unsqueeze(1)
-        self.W_dec.data = self.W_dec.data / W_dec_norms
-        self.W_enc.data = self.W_enc.data * W_dec_norms.T
+        self.W_dec.data.div_(W_dec_norms)
+        self.W_enc.data.mul_(W_dec_norms.T)
 
         # Only update b_enc if it exists (standard/jumprelu architectures)
         if hasattr(self, "b_enc") and isinstance(self.b_enc, nn.Parameter):
-            self.b_enc.data = self.b_enc.data * W_dec_norms.squeeze()
+            self.b_enc.data.mul_(W_dec_norms.squeeze())
 
     def get_name(self):
         """Generate a name for this SAE."""
