@@ -528,15 +528,18 @@ def test_fold_W_dec_norm_keeps_parameter_storage_in_place(
     w_dec_ptr = sae.W_dec.data.data_ptr()
     w_enc_ptr = sae.W_enc.data.data_ptr()
     b_enc_ptr = None
-    if hasattr(sae, "b_enc") and isinstance(sae.b_enc, torch.nn.Parameter):
-        b_enc_ptr = sae.b_enc.data.data_ptr()
+    b_enc = getattr(sae, "b_enc", None)
+    if isinstance(b_enc, torch.nn.Parameter):
+        b_enc_ptr = b_enc.data.data_ptr()
 
     sae.fold_W_dec_norm()
 
     assert sae.W_dec.data.data_ptr() == w_dec_ptr
     assert sae.W_enc.data.data_ptr() == w_enc_ptr
     if b_enc_ptr is not None:
-        assert sae.b_enc.data.data_ptr() == b_enc_ptr
+        current_b_enc = getattr(sae, "b_enc", None)
+        assert isinstance(current_b_enc, torch.nn.Parameter)
+        assert current_b_enc.data.data_ptr() == b_enc_ptr
 
 
 @pytest.mark.parametrize("architecture", ALL_TRAINING_ARCHITECTURES)

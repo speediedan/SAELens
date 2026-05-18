@@ -544,7 +544,7 @@ class ActivationsStore:
 
         batch_tokens = torch.stack(sequences, dim=0)
         if move_to_model_device:
-        return batch_tokens.to(_get_input_token_device(self.model))
+            return batch_tokens.to(_get_input_token_device(self.model))
         return batch_tokens
 
     @torch.no_grad()
